@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Oba Games - لعبة</title>
+<style>
+body {
+    background: #111;
+    color: white;
+    text-align: center;
+    font-family: Arial;
+}
+
+button {
+    padding: 15px;
+    font-size: 20px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎮 لعبة تخمين الرقم</h1>
+<p>اختر رقم من 1 إلى 5</p>
+
+<button onclick="play(1)">1</button>
+<button onclick="play(2)">2</button>
+<button onclick="play(3)">3</button>
+<button onclick="play(4)">4</button>
+<button onclick="play(5)">5</button>
+
+<h2 id="result"></h2>
+
+<script>
+let number = Math.floor(Math.random()*5)+1;
+
+function play(x){
+ if(x == number){
+  document.getElementById("result").innerHTML="🎉 فزت!";
+ }else{
+  document.getElementById("result").innerHTML="❌ حاول مرة ثانية";
+ }
+}
+</script>
+
+</body>
+</html>
