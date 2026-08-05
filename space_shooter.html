@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>حرب الفضاء</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #05070f;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Tahoma', sans-serif;
+    color: #fff;
+    overflow: hidden;
+  }
+  #wrap { position: relative; }
+  canvas {
+    background: radial-gradient(ellipse at center, #0a1128 0%, #05070f 100%);
+    border: 2px solid #2b3a67;
+    border-radius: 8px;
+    display: block;
+  }
+  #hud {
+    position: absolute;
+    top: 10px;
+    left: 15px;
+    right: 15px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 20px;
+    font-weight: bold;
+    text-shadow: 0 0 6px #00e5ff;
+    pointer-events: none;
+  }
+  #overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.75);
+    text-align: center;
+    border-radius: 8px;
+  }
+  #overlay h1 { font-size: 34px; color: #00e5ff; margin-bottom: 10px; text-shadow: 0 0 10px #00e5ff; }
+  #overlay p { font-size: 16px; color: #ccc; margin-bottom: 20px; }
+  button {
+    background: #00e5ff;
+    color: #05070f;
+    border: none;
+    padding: 12px 28px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  button:hover { background: #4df0ff; }
+  #hint {
+    color: #667;
+    font-size: 13px;
+    margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <div>❤️ <span id="lives">3</span></div>
+    <div>⭐ النقاط: <span id="score">0</span></div>
+  </div>
+  <canvas id="game" width="480" height="640"></canvas>
+  <div id="overlay">
+    <h1 id="overlayTitle">حرب الفضاء</h1>
+    <p id="overlayText">استخدم الأسهم أو ⁠A/D للحركة، والمسافة لإطلاق النار</p>
+    <button id="startBtn">ابدأ اللعبة</button>
+  </div>
+</div>
+<div id="hint">على الجوال: المس واسحب للتحريك، والمس مرتين للإطلاق التلقائي</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlayTitle');
+const overlayText = document.getElementById('overlayText');
+const startBtn = document.getElementById('startBtn');
+const scoreEl = document.getElementById('score');
+const livesEl = document.getElementById('lives');
+
+let keys = {};
+document.addEventListener('keydown', e => { keys[e.key] = true; if(e.key===' ') e.preventDefault(); });
+document.addEventListener('keyup', e => keys[e.key] = false);
+
+let touchX = null, autoFire = false;
+canvas.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; autoFire = true; });
+canvas.addEventListener('touchmove', e => { touchX = e.touches[0].clientX; e.preventDefault(); }, {passive:false});
+canvas.addEventListener('touchend', e => { touchX = null; });
+
+let player, bullets, enemyBullets, enemies, particles, stars, score, lives, running, spawnTimer, fireTimer, gameOver;
+
+function resetGame() {
+  player = { x: W/2 - 20, y: H - 70, w: 40, h: 40, speed: 6 };
+  bullets = [];
+  enemyBullets = [];
+  enemies = [];
+  particles = [];
+  score = 0;
+  lives = 3;
+  spawnTimer = 0;
+  fireTimer = 0;
+  gameOver = false;
+  scoreEl.textContent = score;
+  livesEl.textContent = lives;
+  stars = [];
+  for (let i=0;i<60;i++) stars.push({x:Math.random()*W, y:Math.random()*H, s:Math.random()*2+0.5});
+}
+
+function spawnEnemy() {
+  const x = Math.random() * (W - 40) + 10;
+  enemies.push({ x, y: -30, w: 32, h: 28, speed: 1.5 + Math.random()*1.5 + score/500, fireTimer: Math.random()*100, hp: 1 });
+}
+
+function rectsCollide(a,b) {
+  return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+}
+
+function addExplosion(x,y,color) {
+  for (let i=0;i<12;i++) {
+    particles.push({ x, y, vx:(Math.random()-0.5)*6, vy:(Math.random()-0.5)*6, life:30, color });
+  }
+}
+
+function update() {
+  if (!running) return;
+
+  stars.forEach(s => { s.y += s.s; if (s.y>H) { s.y=0; s.x=Math.random()*W; } });
+
+  if (!gameOver) {
+    if (keys['ArrowLeft'] || keys['a'] || keys['A']) player.x -= player.speed;
+    if (keys['ArrowRight'] || keys['d'] || keys['D']) player.x += player.speed;
+    if (touchX !== null) {
+      const rect = canvas.getBoundingClientRect();
+      const targetX = (touchX - rect.left) * (W/rect.width) - player.w/2;
+      player.x += (targetX - player.x) * 0.25;
+    }
+    player.x = Math.max(0, Math.min(W - player.w, player.x));
+
+    fireTimer--;
+    const wantFire = keys[' '] || autoFire;
+    if (wantFire && fireTimer <= 0) {
+      bullets.push({ x: player.x + player.w/2 - 3, y: player.y, w:6, h:14 });
+      fireTimer = 12;
+    }
+
+    spawnTimer--;
+    if (spawnTimer <= 0) {
+      spawnEnemy();
+      spawnTimer = Math.max(20, 55 - Math.floor(score/50));
+    }
+  }
+
+  bullets.forEach(b => b.y -= 9);
+  bullets = bullets.filter(b => b.y > -20);
+
+  enemyBullets.forEach(b => b.y += 5);
+  enemyBullets = enemyBullets.filter(b => b.y < H+20);
+
+  enemies.forEach(en => {
+    en.y += en.speed;
+    en.fireTimer--;
+    if (en.fireTimer <= 0 && !gameOver) {
+      enemyBullets.push({ x: en.x + en.w/2 - 2, y: en.y + en.h, w:4, h:10 });
+      en.fireTimer = 90 + Math.random()*60;
+    }
+  });
+
+  particles.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.life--; });
+  particles = particles.filter(p => p.life>0);
+
+  if (!gameOver) {
+    bullets.forEach(b => {
+      enemies.forEach(en => {
+        if (en.hp>0 && rectsCollide(b,en)) {
+          en.hp = 0;
+          b.hit = true;
+          score += 10;
+          scoreEl.textContent = score;
+          addExplosion(en.x+en.w/2, en.y+en.h/2, '#ffaa00');
+        }
+      });
+    });
+    bullets = bullets.filter(b => !b.hit);
+    enemies = enemies.filter(en => en.hp>0 && en.y < H+40);
+
+    enemyBullets.forEach(b => {
+      if (rectsCollide(b, player)) {
+        b.hit = true;
+        hitPlayer();
+      }
+    });
+    enemyBullets = enemyBullets.filter(b => !b.hit);
+
+    enemies.forEach(en => {
+      if (rectsCollide(en, player)) {
+        en.hp = 0;
+        hitPlayer();
+        addExplosion(en.x+en.w/2, en.y+en.h/2, '#ff4444');
+      }
+    });
+    enemies = enemies.filter(en => en.hp>0 && en.y < H+40);
+  }
+}
+
+function hitPlayer() {
+  lives--;
+  livesEl.textContent = lives;
+  addExplosion(player.x+player.w/2, player.y+player.h/2, '#00e5ff');
+  if (lives <= 0) {
+    gameOver = true;
+    setTimeout(showGameOver, 500);
+  }
+}
+
+function drawShip(x,y,w,h,color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x+w/2, y);
+  ctx.lineTo(x+w, y+h);
+  ctx.lineTo(x+w/2, y+h*0.75);
+  ctx.lineTo(x, y+h);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#fff';
+  stars.forEach(s => { ctx.globalAlpha = 0.6; ctx.fillRect(s.x, s.y, s.s, s.s); });
+  ctx.globalAlpha = 1;
+
+  if (!gameOver) drawShip(player.x, player.y, player.w, player.h, '#00e5ff');
+
+  ctx.fillStyle = '#ffe066';
+  bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+
+  ctx.fillStyle = '#ff4d6d';
+  enemyBullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+
+  enemies.forEach(en => drawShip(en.x, en.y, en.w, en.h, '#ff5252'));
+
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life/30;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, 4, 4);
+    ctx.globalAlpha = 1;
+  });
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function showGameOver() {
+  running = false;
+  overlayTitle.textContent = 'انتهت اللعبة';
+  overlayText.textContent = 'نقاطك: ' + score;
+  startBtn.textContent = 'العب مرة أخرى';
+  overlay.style.display = 'flex';
+}
+
+startBtn.addEventListener('click', () => {
+  resetGame();
+  running = true;
+  overlay.style.display = 'none';
+});
+
+resetGame();
+loop();
+</script>
+</body>
+</html>
