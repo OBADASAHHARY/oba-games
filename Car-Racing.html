@@ -8,7 +8,6 @@
 body{
     margin:0;
     background:#111;
-    overflow:hidden;
     font-family:Arial;
 }
 
@@ -23,41 +22,17 @@ canvas{
 <body>
 
 <canvas id="game" width="400" height="600"></canvas>
-<h1 style="color:white;text-align:center">
-اللعبة تعمل
-</h1>
+
 
 <script>
 
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 
-
-// حفظ البيانات
-
-let coins = Number(localStorage.getItem("coins")) || 0;
-
-let ownedCars = JSON.parse(
-    localStorage.getItem("ownedCars")
-) || ["blue"];
-
-let selectedCar =
-localStorage.getItem("selectedCar") || "blue";
-
-let tools =
-JSON.parse(localStorage.getItem("tools")) || {
-    revive:0,
-    gun:0
-};
-
-
-// الشاشات
-
 let screen="menu";
 
+let coins=0;
 
-
-// اللاعب
 
 let player={
     x:175,
@@ -67,8 +42,6 @@ let player={
 
 
 let enemies=[];
-let bullets=[];
-
 
 let road=0;
 
@@ -76,215 +49,203 @@ let left=false;
 let right=false;
 
 
-// التحكم
+
+
 
 document.addEventListener("keydown",e=>{
 
-    if(e.key=="ArrowLeft" || e.key=="a")
-        left=true;
+if(e.key=="ArrowLeft")
+left=true;
 
-
-    if(e.key=="ArrowRight" || e.key=="d")
-        right=true;
+if(e.key=="ArrowRight")
+right=true;
 
 });
+
 
 
 document.addEventListener("keyup",e=>{
 
-    if(e.key=="ArrowLeft" || e.key=="a")
-        left=false;
+if(e.key=="ArrowLeft")
+left=false;
 
-
-    if(e.key=="ArrowRight" || e.key=="d")
-        right=false;
+if(e.key=="ArrowRight")
+right=false;
 
 });
 
 
 
-// رسم زر
-
-function drawButton(x,y,w,h,text){
-
-    ctx.fillStyle="#008000";
-    ctx.fillRect(x,y,w,h);
 
 
-    ctx.fillStyle="white";
-    ctx.font="22px Arial";
 
-    ctx.fillText(
-        text,
-        x+15,
-        y+38
-    );
+
+function drawCar(x,y,color){
+
+
+ctx.fillStyle=color;
+
+ctx.fillRect(
+x,
+y,
+50,
+90
+);
+
+
+
+ctx.fillStyle="#9be7ff";
+
+ctx.fillRect(
+x+10,
+y+15,
+30,
+25
+);
+
+
+
+ctx.fillStyle="black";
+
+ctx.fillRect(x-5,y+15,8,20);
+ctx.fillRect(x+47,y+15,8,20);
+ctx.fillRect(x-5,y+60,8,20);
+ctx.fillRect(x+47,y+60,8,20);
+
 
 }
 
 
 
-// الصفحة الرئيسية
-
-function mainMenu(){
-
-
-    // خلفية
-
-    let grd=ctx.createLinearGradient(
-        0,0,0,600
-    );
-
-    grd.addColorStop(0,"#1565c0");
-    grd.addColorStop(1,"#111");
-
-
-    ctx.fillStyle=grd;
-    ctx.fillRect(0,0,400,600);
 
 
 
-    ctx.fillStyle="yellow";
-    ctx.font="38px Arial";
+
+function menu(){
 
 
-    ctx.fillText(
-        "سباق السيارات",
-        45,
-        120
-    );
+ctx.fillStyle="#1565c0";
 
-
-
-    ctx.fillStyle="white";
-    ctx.font="24px Arial";
-
-
-    ctx.fillText(
-        "النقاط: "+coins,
-        120,
-        180
-    );
-
-
-
-    drawButton(
-        100,
-        250,
-        200,
-        55,
-        "ابدأ"
-    );
-
-
-    drawButton(
-        100,
-        330,
-        200,
-        55,
-        "المتجر"
-    );
-
-
-    drawButton(
-        100,
-        410,
-        200,
-        55,
-        "سياراتي"
-    );
-
-}
-
-
-
-// متجر
-
-function shop(){
-
-
-ctx.fillStyle="#222";
-ctx.fillRect(0,0,400,600);
+ctx.fillRect(
+0,
+0,
+400,
+600
+);
 
 
 
 ctx.fillStyle="yellow";
-ctx.font="35px Arial";
+
+ctx.font="38px Arial";
 
 ctx.fillText(
-"المتجر",
-140,
-60
+"سباق السيارات",
+45,
+120
 );
 
 
 
 ctx.fillStyle="white";
-ctx.font="20px Arial";
+
+ctx.font="25px Arial";
 
 ctx.fillText(
 "النقاط: "+coins,
 130,
-100
+180
 );
 
 
 
-// سيتم إكمال السيارات والأدوات بالجزء القادم
-}
+button(
+100,
+280,
+200,
+60,
+"ابدأ"
+);
 
-// رسم السيارات داخل اللعبة
-
-function drawCar(x,y,color){
-
-    ctx.fillStyle=color;
-    ctx.fillRect(x,y,50,90);
-
-
-    // الزجاج
-    ctx.fillStyle="#9be7ff";
-    ctx.fillRect(
-        x+10,
-        y+15,
-        30,
-        25
-    );
+    
+button(
+100,
+370,
+200,
+60,
+"المتجر"
+);
 
 
-    // العجلات
-    ctx.fillStyle="black";
-
-    ctx.fillRect(x-5,y+15,8,20);
-    ctx.fillRect(x+47,y+15,8,20);
-    ctx.fillRect(x-5,y+60,8,20);
-    ctx.fillRect(x+47,y+60,8,20);
+button(
+100,
+450,
+200,
+60,
+"سياراتي"
+);
 
 }
 
 
 
-// إنشاء سيارة عدو
+
+
+
+
+function button(x,y,w,h,text){
+
+
+ctx.fillStyle="green";
+
+ctx.fillRect(
+x,
+y,
+w,
+h
+);
+
+
+
+ctx.fillStyle="white";
+
+ctx.font="25px Arial";
+
+ctx.fillText(
+text,
+x+55,
+y+40
+);
+
+
+}
+
+
+
+
+
+
+
 
 function createEnemy(){
 
-    enemies.push({
 
-        x:Math.random()*350,
-        y:-100,
-        speed:5
+enemies.push({
 
-    });
+x:Math.random()*350,
+y:-100
+
+});
+
 
 }
 
 
-// ظهور الأعداء
 
 setInterval(()=>{
 
-    if(screen=="game"){
-        createEnemy();
-    }
+if(screen=="game")
+createEnemy();
 
 },1000);
 
@@ -292,73 +253,55 @@ setInterval(()=>{
 
 
 
-// تحديث اللعبة
+
 
 function update(){
 
 
-    // حركة اللاعب
 
-    if(left && player.x>0){
-        player.x-=player.speed;
-    }
+if(left && player.x>0)
+player.x-=player.speed;
 
 
-    if(right && player.x<350){
-        player.x+=player.speed;
-    }
-
-
-
-    // حركة الطريق
-
-    road+=5;
-
-    if(road>100){
-        road=0;
-    }
+if(right && player.x<350)
+player.x+=player.speed;
 
 
 
 
-
-    // حركة الأعداء
-
-    enemies.forEach(e=>{
+road+=5;
 
 
-        e.y+=e.speed;
+if(road>100)
+road=0;
 
 
 
-        // اصطدام
-
-        if(
-
-            player.x < e.x+50 &&
-            player.x+50 > e.x &&
-            player.y < e.y+90 &&
-            player.y+90 > e.y
-
-        ){
-
-            screen="menu";
-
-        }
+enemies.forEach(e=>{
 
 
-    });
+e.y+=6;
 
 
 
+if(
+player.x < e.x+50 &&
+player.x+50 > e.x &&
+player.y < e.y+90 &&
+player.y+90 > e.y
+){
 
-    // حذف السيارات التي خرجت
+screen="lose";
 
-    enemies=enemies.filter(e=>{
+}
 
-        return e.y<650;
 
-    });
+
+});
+
+
+
+enemies=enemies.filter(e=>e.y<650);
 
 
 
@@ -369,155 +312,71 @@ function update(){
 
 
 
-// شاشة اللعب
 
-function gamePage(){
-
-
-    // الطريق
-
-    ctx.fillStyle="#555";
-
-    ctx.fillRect(
-        0,
-        0,
-        400,
-        600
-    );
+function game(){
 
 
+ctx.fillStyle="#555";
 
-    // خطوط الطريق
-
-    ctx.fillStyle="white";
-
-
-    for(
-        let y=-100;
-        y<600;
-        y+=100
-    ){
-
-        ctx.fillRect(
-            190,
-            y+road,
-            20,
-            50
-        );
-
-    }
+ctx.fillRect(
+0,
+0,
+400,
+600
+);
 
 
 
 
-
-    // سيارة اللاعب
-
-    drawCar(
-        player.x,
-        player.y,
-        selectedCar
-    );
+ctx.fillStyle="white";
 
 
+for(let y=-100;y<600;y+=100){
 
-
-
-    // سيارات الأعداء
-
-    enemies.forEach(e=>{
-
-        drawCar(
-            e.x,
-            e.y,
-            "red"
-        );
-
-    });
-
-
-
-
-
-    ctx.fillStyle="white";
-    ctx.font="22px Arial";
-
-    ctx.fillText(
-        "النقاط: "+coins,
-        10,
-        30
-    );
-
-}
-// =========================
-// الأدوات: الرشاش والرصاص والإحياء
-// =========================
-
-
-let gunActive=false;
-let gunTime=0;
-let reviveUsed=false;
-
-
-
-// إطلاق الرصاص
-
-function shoot(){
-
-    if(!gunActive) return;
-
-
-    bullets.push({
-
-        x:player.x+22,
-        y:player.y-20,
-        speed:10
-
-    });
+ctx.fillRect(
+190,
+y+road,
+20,
+50
+);
 
 }
 
 
 
-// تحديث الرصاص
-
-function updateBullets(){
-
-
-    bullets.forEach(b=>{
-
-        b.y-=b.speed;
-
-
-        enemies.forEach((e,index)=>{
-
-
-            if(
-
-                b.x>e.x &&
-                b.x<e.x+50 &&
-                b.y>e.y &&
-                b.y<e.y+90
-
-            ){
-
-                enemies.splice(index,1);
-                b.y=-100;
-
-                coins++;
-
-            }
-
-
-        });
-
-
-    });
+drawCar(
+player.x,
+player.y,
+"blue"
+);
 
 
 
-    bullets=bullets.filter(b=>b.y>-50);
+enemies.forEach(e=>{
 
+drawCar(
+e.x,
+e.y,
+"red"
+);
+
+});
+
+
+
+ctx.fillStyle="white";
+
+ctx.font="22px Arial";
+
+ctx.fillText(
+"النقاط: "+coins,
+10,
+30
+);
+
+
+
+coins++;
 
 }
 
@@ -525,72 +384,12 @@ function updateBullets(){
 
 
 
-// رسم الرصاص
-
-function drawBullets(){
 
 
-    ctx.fillStyle="yellow";
+function lose(){
 
 
-    bullets.forEach(b=>{
-
-
-        ctx.fillRect(
-            b.x,
-            b.y,
-            6,
-            15
-        );
-
-
-    });
-
-
-}
-
-
-
-
-// زر الإطلاق داخل اللعبة
-
-function shootButton(){
-
-
-    ctx.fillStyle="red";
-
-    ctx.fillRect(
-        280,
-        520,
-        100,
-        50
-    );
-
-
-    ctx.fillStyle="white";
-
-    ctx.font="20px Arial";
-
-
-    ctx.fillText(
-        "إطلاق",
-        300,
-        553
-    );
-
-
-}
-
-
-
-
-
-// عند الخسارة
-
-function loseScreen(){
-
-
-ctx.fillStyle="rgba(0,0,0,0.7)";
+ctx.fillStyle="black";
 
 ctx.fillRect(
 0,
@@ -605,154 +404,30 @@ ctx.fillStyle="yellow";
 
 ctx.font="35px Arial";
 
-
 ctx.fillText(
 "انتهت اللعبة",
 90,
-250
+230
 );
 
 
 
-
-if(tools.revive>0){
-
-
-ctx.fillStyle="green";
-
-ctx.fillRect(
+button(
 100,
-330,
+320,
 200,
-60
-);
-
-
-
-ctx.fillStyle="white";
-
-ctx.font="22px Arial";
-
-
-ctx.fillText(
-"إحياء",
-160,
-370
+60,
+"إعادة"
 );
 
 
 
 }
 
-else{
 
 
-ctx.fillStyle="white";
 
-ctx.font="20px Arial";
 
-ctx.fillText(
-"لا يوجد إحياء",
-120,
-370
-);
-
-
-}
-
-
-
-}
-
-
-
-
-
-// =========================
-// تحديث الشاشة
-// =========================
-
-
-function mainLoop(){
-
-
-ctx.clearRect(
-0,
-0,
-400,
-600
-);
-
-
-
-if(screen=="menu"){
-
-mainMenu();
-
-}
-
-
-
-else if(screen=="shop"){
-
-shop();
-
-}
-
-
-
-else if(screen=="game"){
-
-
-update();
-
-
-updateBullets();
-
-
-gamePage();
-
-
-shootButton();
-
-
-
-if(gunTime>0){
-
-gunTime--;
-
-}
-else{
-
-gunActive=false;
-
-}
-
-
-
-}
-
-
-
-requestAnimationFrame(mainLoop);
-
-
-}
-
-
-
-
-
-// تشغيل اللعبة
-
-mainLoop();
-
-
-
-
-// =========================
-// الضغط على الأزرار
-// =========================
 
 
 canvas.addEventListener("click",e=>{
@@ -760,35 +435,28 @@ canvas.addEventListener("click",e=>{
 
 let r=canvas.getBoundingClientRect();
 
-
 let x=e.clientX-r.left;
 let y=e.clientY-r.top;
 
 
 
-// زر إطلاق
+if(screen=="menu"){
 
-if(
-screen=="game" &&
-x>280 &&
-y>520
-){
+if(y>280 && y<340){
 
-shoot();
+screen="game";
+
+}
 
 }
 
 
 
+else if(screen=="lose"){
 
-// تفعيل الإحياء
 
-if(
-screen=="lose" &&
-tools.revive>0
-){
+if(y>320 && y<380){
 
-tools.revive--;
 
 screen="game";
 
@@ -800,29 +468,63 @@ enemies=[];
 }
 
 
+}
 
-
-
-
-localStorage.setItem(
-"coins",
-coins
-);
-
-
-localStorage.setItem(
-"selectedCar",
-selectedCar
-);
-
-
-localStorage.setItem(
-"tools",
-JSON.stringify(tools)
-);
 
 
 });
+
+
+
+
+
+
+
+
+
+function loop(){
+
+
+ctx.clearRect(
+0,
+0,
+400,
+600
+);
+
+
+
+if(screen=="menu")
+menu();
+
+
+if(screen=="game"){
+
+update();
+
+game();
+
+}
+
+
+
+if(screen=="lose")
+lose();
+
+
+
+requestAnimationFrame(loop);
+
+
+}
+
+
+
+loop();
+
+
+
 </script>
+
 </body>
 </html>
