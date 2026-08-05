@@ -511,21 +511,25 @@ button(
 
 canvas.addEventListener("touchstart",e=>{
 
-let x=e.touches[0].clientX;
+const rect = canvas.getBoundingClientRect();
+let x = e.touches[0].clientX - rect.left;
 
+if(x >= 20 && x <= 120){
+    left = true;
+}
 
-if(x < 200){
-
-left=true;
-
-}else{
-
-right=true;
-
+if(x >= 280 && x <= 380){
+    right = true;
 }
 
 });
 
+canvas.addEventListener("touchend",()=>{
+
+left=false;
+right=false;
+
+});
 
 canvas.addEventListener("touchend",()=>{
 
