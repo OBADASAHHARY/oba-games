@@ -384,8 +384,79 @@ coins++;
 
 
 
+function shop(){
 
 
+ctx.fillStyle="#222";
+
+ctx.fillRect(
+0,
+0,
+400,
+600
+);
+
+
+
+ctx.fillStyle="yellow";
+
+ctx.font="35px Arial";
+
+ctx.fillText(
+"المتجر",
+140,
+70
+);
+
+
+
+ctx.fillStyle="white";
+
+ctx.font="22px Arial";
+
+ctx.fillText(
+"النقاط: "+coins,
+120,
+120
+);
+
+
+
+// السيارات
+
+button(
+50,
+180,
+130,
+60,
+"أخضر 1000"
+);
+
+
+button(
+220,
+180,
+130,
+60,
+"بنفسجي 1000"
+);
+
+
+
+button(
+100,
+300,
+200,
+60,
+"رجوع"
+);
+
+
+
+}
+
+
+    
 function lose(){
 
 
@@ -442,11 +513,27 @@ let y=e.clientY-r.top;
 
 if(screen=="menu"){
 
+
 if(y>280 && y<340){
 
 screen="game";
 
 }
+
+
+if(y>370 && y<430){
+
+screen="shop";
+
+}
+
+
+if(y>450 && y<510){
+
+screen="cars";
+
+}
+
 
 }
 
@@ -511,6 +598,9 @@ game();
 if(screen=="lose")
 lose();
 
+    
+if(screen=="shop")
+shop();
 
 
 requestAnimationFrame(loop);
