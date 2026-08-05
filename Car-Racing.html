@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>سباق السيارات</title>
+
+<style>
+body{
+    margin:0;
+    background:#111;
+    overflow:hidden;
+    font-family:Arial;
+}
+
+canvas{
+    display:block;
+    margin:auto;
+}
+</style>
+
+</head>
+
+<body>
+
+<canvas id="game" width="400" height="600"></canvas>
+
+
+<script>
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+
+// حفظ البيانات
+
+let coins = Number(localStorage.getItem("coins")) || 0;
+
+let ownedCars = JSON.parse(
+    localStorage.getItem("ownedCars")
+) || ["blue"];
+
+let selectedCar =
+localStorage.getItem("selectedCar") || "blue";
+
+let tools =
+JSON.parse(localStorage.getItem("tools")) || {
+    revive:0,
+    gun:0
+};
+
+
+// الشاشات
+
+let screen="menu";
+
+
+
+// اللاعب
+
+let player={
+    x:175,
+    y:480,
+    speed:7
+};
+
+
+let enemies=[];
+let bullets=[];
+
+
+let road=0;
+
+let left=false;
+let right=false;
+
+
+// التحكم
+
+document.addEventListener("keydown",e=>{
+
+    if(e.key=="ArrowLeft" || e.key=="a")
+        left=true;
+
+
+    if(e.key=="ArrowRight" || e.key=="d")
+        right=true;
+
+});
+
+
+document.addEventListener("keyup",e=>{
+
+    if(e.key=="ArrowLeft" || e.key=="a")
+        left=false;
+
+
+    if(e.key=="ArrowRight" || e.key=="d")
+        right=false;
+
+});
+
+
+
+// رسم زر
+
+function drawButton(x,y,w,h,text){
+
+    ctx.fillStyle="#008000";
+    ctx.fillRect(x,y,w,h);
+
+
+    ctx.fillStyle="white";
+    ctx.font="22px Arial";
+
+    ctx.fillText(
+        text,
+        x+15,
+        y+38
+    );
+
+}
+
+
+
+// الصفحة الرئيسية
+
+function mainMenu(){
+
+
+    // خلفية
+
+    let grd=ctx.createLinearGradient(
+        0,0,0,600
+    );
+
+    grd.addColorStop(0,"#1565c0");
+    grd.addColorStop(1,"#111");
+
+
+    ctx.fillStyle=grd;
+    ctx.fillRect(0,0,400,600);
+
+
+
+    ctx.fillStyle="yellow";
+    ctx.font="38px Arial";
+
+
+    ctx.fillText(
+        "سباق السيارات",
+        45,
+        120
+    );
+
+
+
+    ctx.fillStyle="white";
+    ctx.font="24px Arial";
+
+
+    ctx.fillText(
+        "النقاط: "+coins,
+        120,
+        180
+    );
+
+
+
+    drawButton(
+        100,
+        250,
+        200,
+        55,
+        "ابدأ"
+    );
+
+
+    drawButton(
+        100,
+        330,
+        200,
+        55,
+        "المتجر"
+    );
+
+
+    drawButton(
+        100,
+        410,
+        200,
+        55,
+        "سياراتي"
+    );
+
+}
+
+
+
+// متجر
+
+function shop(){
+
+
+ctx.fillStyle="#222";
+ctx.fillRect(0,0,400,600);
+
+
+
+ctx.fillStyle="yellow";
+ctx.font="35px Arial";
+
+ctx.fillText(
+"المتجر",
+140,
+60
+);
+
+
+
+ctx.fillStyle="white";
+ctx.font="20px Arial";
+
+ctx.fillText(
+"النقاط: "+coins,
+130,
+100
+);
+
+
+
+// سيتم إكمال السيارات والأدوات بالجزء القادم
+
+
+// رسم السيارات داخل اللعبة
+
+function drawCar(x,y,color){
+
+    ctx.fillStyle=color;
+    ctx.fillRect(x,y,50,90);
+
+
+    // الزجاج
+    ctx.fillStyle="#9be7ff";
+    ctx.fillRect(
+        x+10,
+        y+15,
+        30,
+        25
+    );
+
+
+    // العجلات
+    ctx.fillStyle="black";
+
+    ctx.fillRect(x-5,y+15,8,20);
+    ctx.fillRect(x+47,y+15,8,20);
+    ctx.fillRect(x-5,y+60,8,20);
+    ctx.fillRect(x+47,y+60,8,20);
+
+}
+
+
+
+// إنشاء سيارة عدو
+
+function createEnemy(){
+
+    enemies.push({
+
+        x:Math.random()*350,
+        y:-100,
+        speed:5
+
+    });
+
+}
+
+
+// ظهور الأعداء
+
+setInterval(()=>{
+
+    if(screen=="game"){
+        createEnemy();
+    }
+
+},1000);
+
+
+
+
+
+// تحديث اللعبة
+
+function update(){
+
+
+    // حركة اللاعب
+
+    if(left && player.x>0){
+        player.x-=player.speed;
+    }
+
+
+    if(right && player.x<350){
+        player.x+=player.speed;
+    }
+
+
+
+    // حركة الطريق
+
+    road+=5;
+
+    if(road>100){
+        road=0;
+    }
+
+
+
+
+
+    // حركة الأعداء
+
+    enemies.forEach(e=>{
+
+
+        e.y+=e.speed;
+
+
+
+        // اصطدام
+
+        if(
+
+            player.x < e.x+50 &&
+            player.x+50 > e.x &&
+            player.y < e.y+90 &&
+            player.y+90 > e.y
+
+        ){
+
+            screen="menu";
+
+        }
+
+
+    });
+
+
+
+
+    // حذف السيارات التي خرجت
+
+    enemies=enemies.filter(e=>{
+
+        return e.y<650;
+
+    });
+
+
+
+}
+
+
+
+
+
+
+// شاشة اللعب
+
+function gamePage(){
+
+
+    // الطريق
+
+    ctx.fillStyle="#555";
+
+    ctx.fillRect(
+        0,
+        0,
+        400,
+        600
+    );
+
+
+
+    // خطوط الطريق
+
+    ctx.fillStyle="white";
+
+
+    for(
+        let y=-100;
+        y<600;
+        y+=100
+    ){
+
+        ctx.fillRect(
+            190,
+            y+road,
+            20,
+            50
+        );
+
+    }
+
+
+
+
+
+    // سيارة اللاعب
+
+    drawCar(
+        player.x,
+        player.y,
+        selectedCar
+    );
+
+
+
+
+
+    // سيارات الأعداء
+
+    enemies.forEach(e=>{
+
+        drawCar(
+            e.x,
+            e.y,
+            "red"
+        );
+
+    });
+
+
+
+
+
+    ctx.fillStyle="white";
+    ctx.font="22px Arial";
+
+    ctx.fillText(
+        "النقاط: "+coins,
+        10,
+        30
+    );
+
+}
+// =========================
+// الأدوات: الرشاش والرصاص والإحياء
+// =========================
+
+
+let gunActive=false;
+let gunTime=0;
+let reviveUsed=false;
+
+
+
+// إطلاق الرصاص
+
+function shoot(){
+
+    if(!gunActive) return;
+
+
+    bullets.push({
+
+        x:player.x+22,
+        y:player.y-20,
+        speed:10
+
+    });
+
+}
+
+
+
+// تحديث الرصاص
+
+function updateBullets(){
+
+
+    bullets.forEach(b=>{
+
+        b.y-=b.speed;
+
+
+        enemies.forEach((e,index)=>{
+
+
+            if(
+
+                b.x>e.x &&
+                b.x<e.x+50 &&
+                b.y>e.y &&
+                b.y<e.y+90
+
+            ){
+
+                enemies.splice(index,1);
+                b.y=-100;
+
+                coins++;
+
+            }
+
+
+        });
+
+
+    });
+
+
+
+    bullets=bullets.filter(b=>b.y>-50);
+
+
+}
+
+
+
+
+
+// رسم الرصاص
+
+function drawBullets(){
+
+
+    ctx.fillStyle="yellow";
+
+
+    bullets.forEach(b=>{
+
+
+        ctx.fillRect(
+            b.x,
+            b.y,
+            6,
+            15
+        );
+
+
+    });
+
+
+}
+
+
+
+
+// زر الإطلاق داخل اللعبة
+
+function shootButton(){
+
+
+    ctx.fillStyle="red";
+
+    ctx.fillRect(
+        280,
+        520,
+        100,
+        50
+    );
+
+
+    ctx.fillStyle="white";
+
+    ctx.font="20px Arial";
+
+
+    ctx.fillText(
+        "إطلاق",
+        300,
+        553
+    );
+
+
+}
+
+
+
+
+
+// عند الخسارة
+
+function loseScreen(){
+
+
+ctx.fillStyle="rgba(0,0,0,0.7)";
+
+ctx.fillRect(
+0,
+0,
+400,
+600
+);
+
+
+
+ctx.fillStyle="yellow";
+
+ctx.font="35px Arial";
+
+
+ctx.fillText(
+"انتهت اللعبة",
+90,
+250
+);
+
+
+
+
+if(tools.revive>0){
+
+
+ctx.fillStyle="green";
+
+ctx.fillRect(
+100,
+330,
+200,
+60
+);
+
+
+
+ctx.fillStyle="white";
+
+ctx.font="22px Arial";
+
+
+ctx.fillText(
+"إحياء",
+160,
+370
+);
+
+
+
+}
+
+else{
+
+
+ctx.fillStyle="white";
+
+ctx.font="20px Arial";
+
+ctx.fillText(
+"لا يوجد إحياء",
+120,
+370
+);
+
+
+}
+
+
+
+}
+
+
+
+
+
+// =========================
+// تحديث الشاشة
+// =========================
+
+
+function mainLoop(){
+
+
+ctx.clearRect(
+0,
+0,
+400,
+600
+);
+
+
+
+if(screen=="menu"){
+
+mainMenu();
+
+}
+
+
+
+else if(screen=="shop"){
+
+shop();
+
+}
+
+
+
+else if(screen=="game"){
+
+
+update();
+
+
+updateBullets();
+
+
+gamePage();
+
+
+shootButton();
+
+
+
+if(gunTime>0){
+
+gunTime--;
+
+}
+else{
+
+gunActive=false;
+
+}
+
+
+
+}
+
+
+
+requestAnimationFrame(mainLoop);
+
+
+}
+
+
+
+
+
+// تشغيل اللعبة
+
+mainLoop();
+
+
+
+
+// =========================
+// الضغط على الأزرار
+// =========================
+
+
+canvas.addEventListener("click",e=>{
+
+
+let r=canvas.getBoundingClientRect();
+
+
+let x=e.clientX-r.left;
+let y=e.clientY-r.top;
+
+
+
+// زر إطلاق
+
+if(
+screen=="game" &&
+x>280 &&
+y>520
+){
+
+shoot();
+
+}
+
+
+
+
+// تفعيل الإحياء
+
+if(
+screen=="lose" &&
+tools.revive>0
+){
+
+tools.revive--;
+
+screen="game";
+
+player.x=175;
+
+enemies=[];
+
+
+}
+
+
+
+
+
+
+localStorage.setItem(
+"coins",
+coins
+);
+
+
+localStorage.setItem(
+"selectedCar",
+selectedCar
+);
+
+
+localStorage.setItem(
+"tools",
+JSON.stringify(tools)
+);
+
+
+});
