@@ -31,7 +31,11 @@ const ctx=canvas.getContext("2d");
 
 let screen="menu";
 
-let coins=0;
+let coins = Number(localStorage.getItem("coins")) || 0;
+
+let ownedCars = JSON.parse(localStorage.getItem("ownedCars")) || ["blue"];
+
+let selectedCar = localStorage.getItem("selectedCar") || "blue";
 
 
 let player={
@@ -285,7 +289,7 @@ e.y+=6;
 if(e.y>600 && !e.scored){
 
 coins++;
-
+saveData();
 e.scored=true;
 
 }
@@ -635,7 +639,26 @@ ctx.fillText("➡",315,560);
 }
 
 
+function saveData(){
 
+localStorage.setItem(
+"coins",
+coins
+);
+
+
+localStorage.setItem(
+"ownedCars",
+JSON.stringify(ownedCars)
+);
+
+
+localStorage.setItem(
+"selectedCar",
+selectedCar
+);
+
+}
 
 
 function loop(){
