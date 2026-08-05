@@ -282,7 +282,13 @@ enemies.forEach(e=>{
 
 e.y+=6;
 
+if(e.y>600 && !e.scored){
 
+coins++;
+
+e.scored=true;
+
+}
 
 if(
 player.x < e.x+50 &&
@@ -376,7 +382,7 @@ ctx.fillText(
 
 
 
-coins++;
+
 
 }
 
@@ -491,7 +497,13 @@ button(
 "إعادة"
 );
 
-
+button(
+100,
+410,
+200,
+60,
+"الرئيسية"
+);
 
 }
 
@@ -554,6 +566,11 @@ enemies=[];
 
 }
 
+if(y>410 && y<470){
+
+screen="menu";
+
+}
 
 }
 
